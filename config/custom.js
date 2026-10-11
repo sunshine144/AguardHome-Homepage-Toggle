@@ -1,6 +1,6 @@
 /**
  * AdGuard Home Header Action Pill for Homepage (Design A)
- * https://github.com/your-username/homepage-adguard-pill
+ * https://github.com/sunshine144/Adguard-Home-Toggle
  *
  * Seamless top-right badge integration with 1-click default (10m) + duration dropdown,
  * real-time ticking timer countdown, and status synchronization.
