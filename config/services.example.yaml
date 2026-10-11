@@ -1,0 +1,14 @@
+# Example Homepage services.yaml entry
+# Note the crucial `id: adguard-home` line which allows custom.js to locate the card reliably!
+
+- Network & Infrastructure:
+    - AdGuard Home:
+        id: adguard-home
+        icon: adguard-home.png
+        href: http://192.168.1.1:80
+        description: Network DNS & Ad Blocker
+        widget:
+          type: adguard
+          url: http://192.168.1.1:80
+          username: "{{HOMEPAGE_VAR_ADGUARD_USER}}"
+          password: "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}"

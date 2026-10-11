@@ -1,0 +1,203 @@
+/* ========================================================
+   AdGuard Home Header Action Pill for Homepage (Design A)
+   https://github.com/your-username/homepage-adguard-pill
+   ======================================================== */
+
+#adguard-home,
+li[data-name="AdGuard Home"],
+li.service:has(#agh-pill-container) {
+  position: relative;
+  z-index: 30;
+}
+
+#adguard-home .service-card,
+li[data-name="AdGuard Home"] .service-card,
+li.service:has(#agh-pill-container) .service-card {
+  overflow: visible !important;
+}
+
+.agh-pill-container {
+  display: inline-flex;
+  align-items: center;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 40;
+  user-select: none;
+}
+
+.agh-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  background: rgba(30, 41, 59, 0.7); /* Translucent slate */
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.agh-pill:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(129, 161, 193, 0.65); /* Nord frost accent */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.agh-pill-btn {
+  background: transparent;
+  color: #e2e8f0;
+  border: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0 7px;
+  height: 100%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.agh-pill-btn:hover {
+  color: #ffffff;
+}
+
+.agh-pill-chevron {
+  border-left: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 0 6px;
+  font-size: 8px;
+  cursor: pointer;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+
+.agh-pill-chevron:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Paused / Warning State */
+.agh-pill.agh-paused {
+  background: rgba(220, 38, 38, 0.35); /* Crimson red */
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+  animation: aghPillPulse 2s infinite ease-in-out;
+}
+
+.agh-pill.agh-paused .agh-pill-btn {
+  color: #fecaca; /* Red-200 */
+}
+
+.agh-pill.agh-paused:hover {
+  background: rgba(220, 38, 38, 0.5);
+  border-color: rgba(239, 68, 68, 0.9);
+}
+
+@keyframes aghPillPulse {
+  0%, 100% {
+    border-color: rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* Dropdown Menu */
+.agh-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  background: #1e293b; /* Deep slate */
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 155px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: none;
+  flex-direction: column;
+  z-index: 1000;
+  backdrop-filter: blur(14px);
+}
+
+.agh-dropdown-menu.show {
+  display: flex;
+  animation: aghFadeIn 0.15s ease-out;
+}
+
+@keyframes aghFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.agh-dropdown-item {
+  background: transparent;
+  color: #cbd5e1;
+  border: none;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 7px 10px;
+  text-align: left;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.agh-dropdown-item:hover {
+  background: rgba(129, 161, 193, 0.25);
+  color: #ffffff;
+  padding-left: 12px;
+}
+
+.agh-dropdown-divider {
+  height: 1px;
+  background: rgba(148, 163, 184, 0.2);
+  margin: 3px 0;
+}
+
+/* Toast Notifications */
+.agh-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.agh-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.agh-toast-success {
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+.agh-toast-pause {
+  border-color: rgba(251, 191, 36, 0.6);
+}

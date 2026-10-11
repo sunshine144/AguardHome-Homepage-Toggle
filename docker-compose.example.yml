@@ -1,0 +1,21 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config:/app/config:z
+      # Mount the patched Next.js template (injects custom.js)
+      - ./en.html.patched:/app/.next/server/pages/en.html:z
+      # Mount the patched Next.js API route (proxies AdGuard API)
+      - "./path.js.patched:/app/.next/server/pages/api/config/[path].js:z"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - PORT=3000
+      - HOMEPAGE_ALLOWED_HOSTS=*
+      # AdGuard Home connection settings for the same-origin proxy
+      - HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80
+      - HOMEPAGE_VAR_ADGUARD_USER=admin
+      - HOMEPAGE_VAR_ADGUARD_PASSWORD=your_password_here
+    restart: always
