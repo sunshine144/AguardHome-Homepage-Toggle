@@ -11,11 +11,15 @@ services:
       # Mount the patched Next.js API route (proxies AdGuard API)
       - "./path.js.patched:/app/.next/server/pages/api/config/[path].js:z"
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Recommended: store secrets in config/.env so they are not committed to git
+    env_file:
+      - ./config/.env
     environment:
       - PORT=3000
       - HOMEPAGE_ALLOWED_HOSTS=*
-      # AdGuard Home connection settings for the same-origin proxy
-      - HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80
-      - HOMEPAGE_VAR_ADGUARD_USER=admin
-      - HOMEPAGE_VAR_ADGUARD_PASSWORD=your_password_here
+      # Alternatively, you can specify them directly here:
+      # - HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80
+      # - HOMEPAGE_VAR_ADGUARD_USER=admin
+      # - HOMEPAGE_VAR_ADGUARD_PASSWORD=your_password_here
     restart: always
+

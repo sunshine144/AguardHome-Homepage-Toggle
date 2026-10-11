@@ -113,15 +113,17 @@ services:
       - ./en.html.patched:/app/.next/server/pages/en.html:z
       - "./path.js.patched:/app/.next/server/pages/api/config/[path].js:z"
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Recommended: Keep secrets safe in config/.env (do not commit .env to git!)
+    env_file:
+      - ./config/.env
     environment:
       - PORT=3000
       - HOMEPAGE_ALLOWED_HOSTS=*
-      # AdGuard Home settings for the proxy
-      - HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80
-      - HOMEPAGE_VAR_ADGUARD_USER=your_username
-      - HOMEPAGE_VAR_ADGUARD_PASSWORD=your_password
     restart: always
 ```
+
+> **Security Tip**: Store your `HOMEPAGE_VAR_ADGUARD_*` variables in `config/.env` rather than directly in `docker-compose.yml`. This prevents accidentally committing passwords to git if you publish or back up your compose files.
+
 
 ### 5. Restart Homepage
 
