@@ -145,6 +145,15 @@ In `config/custom.css`, you can adjust colors, fonts, or position to match your 
 
 ---
 
+## 🤝 Acknowledgments & Development Note
+
+This project was conceived, architectural decisions guided, and thoroughly reviewed and tested by me. The low-level JavaScript, Next.js proxy patches, CSS, and container automation were programmed in pair-programming sessions with Google DeepMind's **Antigravity AI**.
+
+> *"My ideas and requirements made this possible; AI made it possible today!"*
+
+---
+
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
