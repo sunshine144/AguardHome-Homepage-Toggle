@@ -79,12 +79,19 @@ In your Homepage `config/services.yaml`, ensure your AdGuard Home item has `id: 
 Set your AdGuard Home connection details in your Homepage `config/.env` (or copy from `config/.env.example`):
 
 ```env
-HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80
+# Choose the URL that matches your AdGuard hosting setup:
+HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80       # Bare-metal / Router / Dedicated server
+# HOMEPAGE_VAR_ADGUARD_URL=http://adguard-home:80    # Docker container on the same network
+# HOMEPAGE_VAR_ADGUARD_URL=http://host.docker.internal:80 # Installed directly on the Docker host
+
 HOMEPAGE_VAR_ADGUARD_USER=admin
 HOMEPAGE_VAR_ADGUARD_PASSWORD=your_secure_password
 ```
 
-> **Why .env?** Homepage natively resolves `{{HOMEPAGE_VAR_*}}` tokens and keeping credentials in `.env` ensures passwords are never committed to git or exposed in plain text.
+> [!IMPORTANT]
+> **Container Networking Tip**: Do **not** use `http://localhost:80`. Inside the Homepage container, `localhost` points to Homepage itself, not your host or other containers. Use your server's LAN IP or the container service name (e.g., `http://adguard-home:80`).
+>
+> **Why .env?** Homepage natively resolves `{{HOMEPAGE_VAR_*}}` tokens, and storing credentials in `.env` ensures passwords are never committed to git or exposed in plain text.
 
 ### 3. Copy `custom.js` & `custom.css`
 
