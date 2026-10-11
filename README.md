@@ -1,15 +1,19 @@
 # 🛡️ Homepage AdGuard Home Header Action Pill
 
-> Add an interactive 1-Click Pause & Resume action pill with custom durations and a live ticking countdown directly to your [Homepage](https://gethomepage.dev/) dashboard.
+> Add an interactive 1-Click Pause & Resume action pill with custom durations and a live ticking countdown directly to your [Homepage](https://gethomepage.dev/) dashboard — **no Home Assistant required!**
 
 <div align="center">
   <img src="assets/demo.gif" alt="Homepage AdGuard Action Pill Demo" width="700" />
 </div>
 
+> [!NOTE]
+> **Why this exists**: The standard community advice for adding buttons to Homepage is *"just set up Home Assistant and build an automation."* If you only run a lightweight server with a few services, installing and configuring Home Assistant just to pause DNS blocking for 10 minutes is massive overkill. This project gives you a direct, native-feeling toggle with zero external software needed.
+
 ---
 
 ## ✨ Features
 
+- 🚫 **No Home Assistant Needed**: Completely standalone — built specifically to eliminate the need for an external Home Assistant stack.
 - ⚡ **1-Click Default Pause**: Click the badge once to instantly pause AdGuard for 10 minutes.
 - ⏱️ **Split Duration Dropdown**: Click the chevron (`▼`) to pick custom durations:
   - ⚡ 30 seconds
