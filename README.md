@@ -74,16 +74,28 @@ In your Homepage `config/services.yaml`, ensure your AdGuard Home item has `id: 
           password: "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}"
 ```
 
-### 2. Copy `custom.js` & `custom.css`
+### 2. Configure Credentials in `config/.env`
 
-Copy the files from the `config/` directory in this repo into your Homepage's `config/` directory:
+Set your AdGuard Home connection details in your Homepage `config/.env` (or copy from `config/.env.example`):
+
+```env
+HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80
+HOMEPAGE_VAR_ADGUARD_USER=admin
+HOMEPAGE_VAR_ADGUARD_PASSWORD=your_secure_password
+```
+
+> **Why .env?** Homepage natively resolves `{{HOMEPAGE_VAR_*}}` tokens and keeping credentials in `.env` ensures passwords are never committed to git or exposed in plain text.
+
+### 3. Copy `custom.js` & `custom.css`
+
+Copy the custom script and styling from `config/` into your Homepage's `config/` directory:
 
 ```bash
 cp config/custom.js /path/to/your/homepage/config/custom.js
 cp config/custom.css /path/to/your/homepage/config/custom.css
 ```
 
-### 3. Extract & Patch Container Files
+### 4. Extract & Patch Container Files
 
 Run the provided patch script inside your Homepage compose directory. It automatically extracts `en.html` and `[path].js` from your running Homepage container and injects the script tag and API proxy handler:
 
@@ -96,9 +108,9 @@ This creates:
 - `en.html.patched` (injects `<script src="/api/config/custom.js" defer></script>`)
 - `path.js.patched` (proxies `/api/config/adguard` calls to AdGuard)
 
-### 4. Update `docker-compose.yml`
+### 5. Update `docker-compose.yml`
 
-Mount the two patched files and configure your AdGuard environment variables:
+Mount the two patched files and reference your `config/.env` file:
 
 ```yaml
 services:
@@ -113,7 +125,7 @@ services:
       - ./en.html.patched:/app/.next/server/pages/en.html:z
       - "./path.js.patched:/app/.next/server/pages/api/config/[path].js:z"
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    # Recommended: Keep secrets safe in config/.env (do not commit .env to git!)
+    # Loads AdGuard credentials from config/.env
     env_file:
       - ./config/.env
     environment:
@@ -122,10 +134,7 @@ services:
     restart: always
 ```
 
-> **Security Tip**: Store your `HOMEPAGE_VAR_ADGUARD_*` variables in `config/.env` rather than directly in `docker-compose.yml`. This prevents accidentally committing passwords to git if you publish or back up your compose files.
-
-
-### 5. Restart Homepage
+### 6. Restart Homepage
 
 ```bash
 docker compose down && docker compose up -d
