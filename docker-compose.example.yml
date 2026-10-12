@@ -4,22 +4,17 @@ services:
     container_name: homepage
     ports:
       - "3000:3000"
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint-patch.sh"]
     volumes:
       - ./config:/app/config:z
-      # Mount the patched Next.js template (injects custom.js)
-      - ./en.html.patched:/app/.next/server/pages/en.html:z
-      # Mount the patched Next.js API route (proxies AdGuard API)
-      - "./path.js.patched:/app/.next/server/pages/api/config/[path].js:z"
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    # Recommended: store secrets in config/.env so they are not committed to git
+      # Dynamic in-container patcher (patches Next.js at boot; survives image auto-updates!)
+      - ./entrypoint-patch.sh:/usr/local/bin/entrypoint-patch.sh:ro,z
+    # Store secrets in config/.env (copy config/.env.example to config/.env)
     env_file:
       - ./config/.env
     environment:
       - PORT=3000
-      - HOMEPAGE_ALLOWED_HOSTS=*
-      # Alternatively, you can specify them directly here:
-      # - HOMEPAGE_VAR_ADGUARD_URL=http://192.168.1.1:80
-      # - HOMEPAGE_VAR_ADGUARD_USER=admin
-      # - HOMEPAGE_VAR_ADGUARD_PASSWORD=your_password_here
+      # Restrict allowed hosts to your LAN IP / dashboard hostname (leave commented for default)
+      # - HOMEPAGE_ALLOWED_HOSTS=192.168.1.100,localhost,127.0.0.1
     restart: always
 

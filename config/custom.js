@@ -1,9 +1,9 @@
 /**
  * AdGuard Home Header Action Pill for Homepage (Design A)
- * https://github.com/sunshine144/Adguard-Home-Toggle
+ * https://github.com/sunshine144/AguardHome-Homepage-Toggle
  *
  * Seamless top-right badge integration with 1-click default (10m) + duration dropdown,
- * real-time ticking timer countdown, and status synchronization.
+ * drift-free real-time countdown timer, background tab throttling, and status synchronization.
  */
 
 (function () {
@@ -12,8 +12,9 @@
   const DEFAULT_PAUSE_MS = 600000; // 10 minutes default
   let pollInterval = null;
   let countdownTimer = null;
-  let remainingMs = 0;
+  let endsAt = 0;
   let isPaused = false;
+  let documentClickAttached = false;
 
   function formatTime(ms) {
     if (ms <= 0) return "00:00";
@@ -53,9 +54,14 @@
 
   async function callBridge(action, params = {}) {
     try {
-      const searchParams = new URLSearchParams({ action, ...params });
-      const url = `/api/config/adguard?${searchParams.toString()}`;
-      const res = await fetch(url, { method: "GET" });
+      const res = await fetch("/api/config/adguard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Homepage-AdGuard-Toggle": "1"
+        },
+        body: JSON.stringify({ action, ...params })
+      });
       if (!res.ok) {
         console.warn("[AGH-Bridge] HTTP error:", res.status);
         return null;
@@ -89,9 +95,15 @@
     }
   }
 
+  function startPolling() {
+    if (document.hidden) return;
+    clearInterval(pollInterval);
+    const intervalMs = isPaused ? 10000 : 30000;
+    pollInterval = setInterval(checkStatus, intervalMs);
+  }
+
   function updateState(protectionEnabled, durationMs = 0) {
     isPaused = !protectionEnabled;
-    remainingMs = durationMs;
 
     const pill = document.getElementById("agh-pill");
     const mainBtn = document.getElementById("agh-main-btn");
@@ -105,27 +117,31 @@
 
     if (isPaused) {
       pill.classList.add("agh-paused");
-      mainBtn.innerHTML = `<span class="agh-icon">▶</span> ${remainingMs > 0 ? formatTime(remainingMs) : "RESUME"}`;
-      mainBtn.title = "Protection paused - Click to resume immediately";
-      if (splitBtn) splitBtn.style.display = "none";
-
-      if (remainingMs > 0) {
+      if (durationMs > 0) {
+        endsAt = Date.now() + durationMs;
+        mainBtn.innerHTML = `<span class="agh-icon">▶</span> ${formatTime(durationMs)}`;
         countdownTimer = setInterval(() => {
-          remainingMs -= 1000;
-          if (remainingMs <= 0) {
+          const remaining = Math.max(0, endsAt - Date.now());
+          if (remaining <= 0) {
             clearInterval(countdownTimer);
             checkStatus();
           } else {
-            mainBtn.innerHTML = `<span class="agh-icon">▶</span> ${formatTime(remainingMs)}`;
+            mainBtn.innerHTML = `<span class="agh-icon">▶</span> ${formatTime(remaining)}`;
           }
         }, 1000);
+      } else {
+        mainBtn.innerHTML = `<span class="agh-icon">▶</span> RESUME`;
       }
+      mainBtn.title = "Protection paused - Click to resume immediately";
+      if (splitBtn) splitBtn.style.display = "none";
     } else {
       pill.classList.remove("agh-paused");
       mainBtn.innerHTML = `<span class="agh-icon">⏸</span> 10m`;
       mainBtn.title = "Click to pause AdGuard for 10 minutes";
       if (splitBtn) splitBtn.style.display = "inline-flex";
     }
+
+    startPolling();
   }
 
   async function checkStatus() {
@@ -148,21 +164,24 @@
       return liByName.querySelector(".service-card") || liByName;
     }
 
-    // 3. Link href match
-    const links = document.querySelectorAll('a[href*="adguard"], a[href*=":80"], a[href*=":3000"]');
+    // 3. Link href and host inspection (avoids matching unrelated :8080 / :8000 services)
+    const links = document.querySelectorAll('a[href*="adguard"], a[href]');
     for (const a of links) {
-      if (a.textContent.toLowerCase().includes("adguard")) {
-        const card = a.closest(".service-card");
-        if (card) return card;
-      }
+      try {
+        const u = new URL(a.href, window.location.origin);
+        const isAdgHost = u.hostname.toLowerCase().includes("adguard") || a.textContent.toLowerCase().includes("adguard");
+        if (isAdgHost) {
+          const card = a.closest(".service-card");
+          if (card) return card;
+        }
+      } catch (_) {}
     }
 
-    // 4. Text content match
-    const elements = document.querySelectorAll(".service-name, h1, h2, h3, h4, span, div, p");
-    for (const el of elements) {
-      if (el.textContent.trim().toLowerCase() === "adguard home") {
-        const card = el.closest(".service-card");
-        if (card) return card;
+    // 4. Scoped service card heading search
+    const headings = document.querySelectorAll(".service-card .service-name, .service-card h2, .service-card h3");
+    for (const h of headings) {
+      if (h.textContent.trim().toLowerCase().includes("adguard")) {
+        return h.closest(".service-card");
       }
     }
     return null;
@@ -260,20 +279,23 @@
       });
     });
 
-    // Close dropdown on outside click
-    document.addEventListener("click", (e) => {
-      if (!container.contains(e.target)) {
-        dropdown.classList.remove("show");
-      }
-    });
+    // Close dropdown on outside click (registered once globally)
+    if (!documentClickAttached) {
+      document.addEventListener("click", (e) => {
+        const curContainer = document.getElementById("agh-pill-container");
+        const curDropdown = document.getElementById("agh-dropdown");
+        if (curDropdown && (!curContainer || !curContainer.contains(e.target))) {
+          curDropdown.classList.remove("show");
+        }
+      });
+      documentClickAttached = true;
+    }
+
+    // Card successfully injected: disconnect observer to save CPU
+    observer.disconnect();
 
     // Initial status check
     checkStatus();
-
-    // Poll status every 7 seconds
-    if (!pollInterval) {
-      pollInterval = setInterval(checkStatus, 7000);
-    }
   }
 
   // Observe DOM changes to inject button once card renders
@@ -283,9 +305,22 @@
     }
   });
 
+  // Visibility change: pause polling when backgrounded, resume when foregrounded
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    } else {
+      checkStatus();
+      startPolling();
+    }
+  });
+
   function init() {
     injectControls();
-    observer.observe(document.body, { childList: true, subtree: true });
+    if (!document.getElementById("agh-pill-container")) {
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
   if (document.readyState === "loading") {

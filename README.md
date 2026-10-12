@@ -38,8 +38,10 @@ This project solves both problems elegantly by routing status checks and protect
 ┌──────────────────────────────────────┐
 │        Browser (Homepage UI)         │
 └──────────────────┬───────────────────┘
-                   │  GET /api/config/adguard?action=pause&duration=600000
-                   │  (Same-origin: No CORS, No mixed-content, No extra port)
+                   │  POST /api/config/adguard
+                   │  Headers: X-Homepage-AdGuard-Toggle: 1
+                   │  Payload: {"action": "pause", "duration": 600000}
+                   │  (CSRF-Hardened: POST-only, custom header, CORS preflight protected)
                    ▼
 ┌──────────────────────────────────────┐
 │ Homepage Container (:3000)           │
@@ -102,22 +104,20 @@ cp config/custom.js /path/to/your/homepage/config/custom.js
 cp config/custom.css /path/to/your/homepage/config/custom.css
 ```
 
-### 4. Extract & Patch Container Files
+### 4. Enable Dynamic In-Container Boot Patcher (Recommended)
 
-Run the provided patch script inside your Homepage compose directory. It automatically extracts `en.html` and `[path].js` from your running Homepage container and injects the script tag and API proxy handler:
+Copy `entrypoint-patch.sh` into your Homepage directory and make it executable:
 
 ```bash
-# Supports docker and podman (syntax: ./patches/patch.sh [container_name])
-./patches/patch.sh homepage
+cp entrypoint-patch.sh /path/to/your/homepage/entrypoint-patch.sh
+chmod +x /path/to/your/homepage/entrypoint-patch.sh
 ```
 
-This creates:
-- `en.html.patched` (injects `<script src="/api/config/custom.js" defer></script>`)
-- `path.js.patched` (proxies `/api/config/adguard` calls to AdGuard)
+This lightweight script runs inside the Homepage container at startup. It patches Next.js dynamically in container memory, so **future Homepage container updates or Watchtower/autoupdate runs will never break your toggle**! If Homepage ever updates in an incompatible way, the patcher gracefully skips itself, allowing Homepage to start normally.
 
 ### 5. Update `docker-compose.yml`
 
-Mount the two patched files and reference your `config/.env` file:
+Mount `entrypoint-patch.sh` and set the container entrypoint (no Docker socket or raw host mounts needed):
 
 ```yaml
 services:
@@ -126,20 +126,22 @@ services:
     container_name: homepage
     ports:
       - "3000:3000"
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint-patch.sh"]
     volumes:
       - ./config:/app/config:z
-      # Mount the patched files
-      - ./en.html.patched:/app/.next/server/pages/en.html:z
-      - "./path.js.patched:/app/.next/server/pages/api/config/[path].js:z"
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    # Loads AdGuard credentials from config/.env
+      # Dynamic in-container patcher (survives image updates!)
+      - ./entrypoint-patch.sh:/usr/local/bin/entrypoint-patch.sh:ro,z
+    # Loads AdGuard credentials securely from config/.env
     env_file:
       - ./config/.env
     environment:
       - PORT=3000
-      - HOMEPAGE_ALLOWED_HOSTS=*
+      # Security best practice: restrict allowed hosts to your LAN IP / domain
+      # - HOMEPAGE_ALLOWED_HOSTS=192.168.1.100,localhost,127.0.0.1
     restart: always
 ```
+
+*(Optional alternative)*: If you prefer static file patching instead of an entrypoint wrapper, you can run `./patches/patch.sh homepage` which uses the container's built-in Node.js runtime with zero host dependencies.
 
 ### 6. Restart Homepage
 
@@ -157,7 +159,8 @@ Hard-refresh your Homepage browser tab (`Ctrl + F5` or `Cmd + Shift + R`). The a
 In `config/custom.js`, you can easily customize:
 - **Default pause time**: Change `DEFAULT_PAUSE_MS = 600000;` (default is 10 minutes).
 - **Dropdown durations**: Add, change, or remove options in the `agh-dropdown-menu` HTML block.
-- **Polling interval**: Change the status check interval (default: 7 seconds).
+- **Polling efficiency**: Status polling runs every 30 seconds while the tab is active and automatically pauses completely when the tab is backgrounded (`document.hidden`) to avoid CPU overhead on low-power devices.
+- **Drift-free countdown**: The countdown calculates remaining time using absolute system timestamps (`endsAt`), keeping time accurate even if the tab was suspended.
 
 In `config/custom.css`, you can adjust colors, fonts, or position to match your personal Homepage theme.
 

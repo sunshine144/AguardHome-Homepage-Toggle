@@ -1,6 +1,7 @@
 # Environment & sensitive files
 .env
 .env.*
+!.env.example
 *.local
 
 # Patched outputs if run locally
